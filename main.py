@@ -25,6 +25,16 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
+# List of example URLs for testing
+example_urls = [
+    "http://testphp.vulnweb.com/AJAX/index.php",
+    "http://www.itsecgames.com/",
+    
+]
+
+# Allow user to either enter their URL or select an example
+url = st.selectbox("🌐 Choose a test website or enter your own:", options=["Select a website..."] + example_urls)
+
 # Vulnerability selection
 vulns = {
     "SQL Injection": "' OR '1'='1",
@@ -48,7 +58,6 @@ with tab1:
     st.write("Select the vulnerabilities you want to test and press the button to start the scan.")
     
     # URL input and vulnerability selection only in the first tab
-    url = st.text_input("🌐 Enter Website URL", placeholder="https://example.com")
     selected_vulns = st.multiselect("🧪 Select vulnerabilities to test", list(vulns.keys()), default=list(vulns.keys()))
 
     # Start Scan button
@@ -60,7 +69,9 @@ with tab2:
 
     # Show loading spinner during scan
     if start_scan:
-        if not validate_url(url):
+        if url == "Select a website...":
+            st.error("❌ Please select or enter a valid website.")
+        elif not validate_url(url):
             st.error("❌ Invalid URL. Please enter a valid website address.")
         else:
             st.info(f"🔍 Scanning {url} ...")
