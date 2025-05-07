@@ -1,6 +1,7 @@
 import streamlit as st
 import requests
 from urllib.parse import urlparse
+import time
 
 st.set_page_config(page_title="Cyber Guard Web Scanner", layout="wide")
 st.title("🛡️ Cyber Guard Web Scanner")
@@ -29,9 +30,9 @@ vulns = {
     "SQL Injection": "' OR '1'='1",
     "Cross-Site Scripting (XSS)": "<script>alert('xss')</script>",
     "Directory Traversal": "../../../../etc/passwd",
-    "SSL/TLS Check": None,
-    "HTTP Methods Check": None,
-    "Security Headers": None
+    "SSL/TLS Check": "https://",  # Set to a placeholder URL to avoid None
+    "HTTP Methods Check": "Check HTTP Methods",  # Placeholder for real check
+    "Security Headers": "Check Headers"  # Placeholder for real check
 }
 
 # Function to validate URL
@@ -66,43 +67,54 @@ with tab2:
             
             # Add loading spinner
             with st.spinner("Scanning..."):
+                start_time = time.time()  # Start timer
+                
                 results = []
 
                 # SSL/TLS Check
                 if "SSL/TLS Check" in selected_vulns:
-                    if url.startswith("https://"):
-                        results.append(("SSL/TLS Check", "✅ Secure: Using HTTPS"))
+                    if vulns["SSL/TLS Check"] == "https://":
+                        if url.startswith("https://"):
+                            results.append(("SSL/TLS Check", "✅ Secure: Using HTTPS"))
+                        else:
+                            results.append(("SSL/TLS Check", "❌ Insecure: Not using HTTPS"))
                     else:
-                        results.append(("SSL/TLS Check", "❌ Insecure: Not using HTTPS"))
+                        results.append(("SSL/TLS Check", "⚠️ No SSL/TLS check performed"))
 
                 # HTTP Methods Check
                 if "HTTP Methods Check" in selected_vulns:
-                    try:
-                        res = requests.options(url, timeout=5)
-                        allow = res.headers.get("Allow", "")
-                        risky = [m for m in ["PUT", "DELETE", "TRACE", "CONNECT"] if m in allow]
-                        if risky:
-                            results.append(("HTTP Methods Check", f"❌ Risky methods enabled: {', '.join(risky)}"))
-                        else:
-                            results.append(("HTTP Methods Check", "✅ Safe: No risky HTTP methods"))
-                    except Exception as e:
-                        results.append(("HTTP Methods Check", f"⚠️ Error checking methods: {e}"))
+                    if vulns["HTTP Methods Check"] == "Check HTTP Methods":
+                        try:
+                            res = requests.options(url, timeout=5)
+                            allow = res.headers.get("Allow", "")
+                            risky = [m for m in ["PUT", "DELETE", "TRACE", "CONNECT"] if m in allow]
+                            if risky:
+                                results.append(("HTTP Methods Check", f"❌ Risky methods enabled: {', '.join(risky)}"))
+                            else:
+                                results.append(("HTTP Methods Check", "✅ Safe: No risky HTTP methods"))
+                        except Exception as e:
+                            results.append(("HTTP Methods Check", f"⚠️ Error checking methods: {e}"))
+                    else:
+                        results.append(("HTTP Methods Check", "⚠️ HTTP Methods check not performed"))
 
                 # Security Headers Check
                 if "Security Headers" in selected_vulns:
-                    try:
-                        res = requests.get(url, timeout=5)
-                        headers = res.headers
-                        missing = []
-                        for header in ["X-Frame-Options", "Content-Security-Policy", "Strict-Transport-Security"]:
-                            if header not in headers:
-                                missing.append(header)
-                        if missing:
-                            results.append(("Security Headers", f"❌ Missing headers: {', '.join(missing)}"))
-                        else:
-                            results.append(("Security Headers", "✅ All recommended security headers are present"))
-                    except Exception as e:
-                        results.append(("Security Headers", f"⚠️ Error checking headers: {e}"))
+                    if vulns["Security Headers"] == "Check Headers":
+                        try:
+                            res = requests.get(url, timeout=5)
+                            headers = res.headers
+                            missing = []
+                            for header in ["X-Frame-Options", "Content-Security-Policy", "Strict-Transport-Security"]:
+                                if header not in headers:
+                                    missing.append(header)
+                            if missing:
+                                results.append(("Security Headers", f"❌ Missing headers: {', '.join(missing)}"))
+                            else:
+                                results.append(("Security Headers", "✅ All recommended security headers are present"))
+                        except Exception as e:
+                            results.append(("Security Headers", f"⚠️ Error checking headers: {e}"))
+                    else:
+                        results.append(("Security Headers", "⚠️ Security Headers check not performed"))
 
                 # Display results
                 st.markdown("### 🧾 Scan Results")
@@ -113,6 +125,10 @@ with tab2:
                         st.error(f"{name}: {result}")
                     else:
                         st.warning(f"{name}: {result}")
+
+                # Timer: Display the elapsed time
+                elapsed_time = round(time.time() - start_time, 2)
+                st.success(f"⏱️ Scan completed in {elapsed_time} seconds!")
 
                 # Add download button for results
                 formatted_results = "\n".join([f"{name}: {result}" for name, result in results])
