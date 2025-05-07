@@ -21,16 +21,8 @@ st.markdown("""
         background-color: #e040fb;
         color: black;
     }
-    .stTab {
-        background-color: #f8e6f9;
-        color: #6200ea;
-    }
     </style>
 """, unsafe_allow_html=True)
-
-# URL input
-url_input_key = "url_input_key"  # Unique key for URL input
-url = st.text_input("🌐 Enter Website URL", placeholder="https://example.com", key=url_input_key)
 
 # Vulnerability selection
 vulns = {
@@ -41,9 +33,6 @@ vulns = {
     "HTTP Methods Check": None,
     "Security Headers": None
 }
-
-vulns_key = "vulns_key"  # Unique key for vulnerability selection
-selected_vulns = st.multiselect("🧪 Select vulnerabilities to test", list(vulns.keys()), default=list(vulns.keys()), key=vulns_key)
 
 # Function to validate URL
 def validate_url(url):
@@ -57,10 +46,10 @@ with tab1:
     st.header("🛡️ Vulnerability Scan")
     st.write("Select the vulnerabilities you want to test and press the button to start the scan.")
     
-    # URL input and vulnerability selection
-    url = st.text_input("🌐 Enter Website URL", placeholder="https://example.com", key="unique_url_input")
-    selected_vulns = st.multiselect("🧪 Select vulnerabilities to test", list(vulns.keys()), default=list(vulns.keys()), key="unique_vulns_selection")
-    
+    # URL input and vulnerability selection only in the first tab
+    url = st.text_input("🌐 Enter Website URL", placeholder="https://example.com")
+    selected_vulns = st.multiselect("🧪 Select vulnerabilities to test", list(vulns.keys()), default=list(vulns.keys()))
+
     # Start Scan button
     start_scan = st.button("🚀 Start Scan")
     
