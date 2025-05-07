@@ -49,40 +49,40 @@ def validate_url(url):
     return parsed.scheme in ["http", "https"] and parsed.netloc
 
 # Tabs for navigation
-tab1, tab2 = st.tabs(["🕵️ فحص الثغرات", "📄 نتائج الفحص"])
+tab1, tab2 = st.tabs(["🕵️ Vulnerability Scan", "📄 Scan Results"])
 
 with tab1:
-    st.header("🛡️ فحص الثغرات")
-    st.write("حدد أنواع الثغرات التي ترغب في فحصها واضغط على الزر لبدء الفحص.")
+    st.header("🛡️ Vulnerability Scan")
+    st.write("Select the vulnerabilities you want to test and press the button to start the scan.")
     
     # URL input and vulnerability selection
-    url = st.text_input("🌐 أدخل عنوان الموقع الإلكتروني", placeholder="https://example.com")
-    selected_vulns = st.multiselect("🧪 اختر الثغرات للفحص", list(vulns.keys()), default=list(vulns.keys()))
+    url = st.text_input("🌐 Enter Website URL", placeholder="https://example.com")
+    selected_vulns = st.multiselect("🧪 Select vulnerabilities to test", list(vulns.keys()), default=list(vulns.keys()))
     
     # Start Scan button
-    start_scan = st.button("🚀 ابدأ الفحص")
+    start_scan = st.button("🚀 Start Scan")
     
 with tab2:
-    st.header("📄 تقرير النتائج")
-    st.write("هنا ستظهر نتائج الفحص...")
+    st.header("📄 Scan Results")
+    st.write("The results of your scan will appear here...")
 
     # Show loading spinner during scan
     if start_scan:
         if not validate_url(url):
-            st.error("❌ URL غير صالح. يرجى إدخال عنوان موقع صحيح.")
+            st.error("❌ Invalid URL. Please enter a valid website address.")
         else:
-            st.info(f"🔍 جاري فحص {url} ...")
+            st.info(f"🔍 Scanning {url} ...")
             
             # Add loading spinner
-            with st.spinner("جارٍ الفحص..."):
+            with st.spinner("Scanning..."):
                 results = []
 
                 # SSL/TLS Check
                 if "SSL/TLS Check" in selected_vulns:
                     if url.startswith("https://"):
-                        results.append(("SSL/TLS Check", "✅ آمن: يستخدم HTTPS"))
+                        results.append(("SSL/TLS Check", "✅ Secure: Using HTTPS"))
                     else:
-                        results.append(("SSL/TLS Check", "❌ غير آمن: لا يستخدم HTTPS"))
+                        results.append(("SSL/TLS Check", "❌ Insecure: Not using HTTPS"))
 
                 # HTTP Methods Check
                 if "HTTP Methods Check" in selected_vulns:
@@ -91,11 +91,11 @@ with tab2:
                         allow = res.headers.get("Allow", "")
                         risky = [m for m in ["PUT", "DELETE", "TRACE", "CONNECT"] if m in allow]
                         if risky:
-                            results.append(("HTTP Methods Check", f"❌ طرق خطيرة مفعلة: {', '.join(risky)}"))
+                            results.append(("HTTP Methods Check", f"❌ Risky methods enabled: {', '.join(risky)}"))
                         else:
-                            results.append(("HTTP Methods Check", "✅ آمن: لا توجد طرق HTTP خطيرة"))
+                            results.append(("HTTP Methods Check", "✅ Safe: No risky HTTP methods"))
                     except Exception as e:
-                        results.append(("HTTP Methods Check", f"⚠️ خطأ في التحقق: {e}"))
+                        results.append(("HTTP Methods Check", f"⚠️ Error checking methods: {e}"))
 
                 # Security Headers Check
                 if "Security Headers" in selected_vulns:
@@ -107,14 +107,14 @@ with tab2:
                             if header not in headers:
                                 missing.append(header)
                         if missing:
-                            results.append(("Security Headers", f"❌ رؤوس مفقودة: {', '.join(missing)}"))
+                            results.append(("Security Headers", f"❌ Missing headers: {', '.join(missing)}"))
                         else:
-                            results.append(("Security Headers", "✅ جميع رؤوس الأمان موجودة"))
+                            results.append(("Security Headers", "✅ All recommended security headers are present"))
                     except Exception as e:
-                        results.append(("Security Headers", f"⚠️ خطأ في التحقق: {e}"))
+                        results.append(("Security Headers", f"⚠️ Error checking headers: {e}"))
 
                 # Display results
-                st.markdown("### 🧾 نتائج الفحص")
+                st.markdown("### 🧾 Scan Results")
                 for name, result in results:
                     if "✅" in result:
                         st.success(f"{name}: {result}")
@@ -125,4 +125,4 @@ with tab2:
 
                 # Add download button for results
                 formatted_results = "\n".join([f"{name}: {result}" for name, result in results])
-                st.download_button("تحميل النتائج", data=formatted_results, file_name="scan_results.txt")
+                st.download_button("Download Results", data=formatted_results, file_name="scan_results.txt")
