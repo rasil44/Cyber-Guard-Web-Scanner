@@ -21,6 +21,10 @@ st.markdown("""
         background-color: #e040fb;
         color: black;
     }
+    .stTab {
+        background-color: #f8e6f9;
+        color: #6200ea;
+    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -44,90 +48,81 @@ def validate_url(url):
     parsed = urlparse(url)
     return parsed.scheme in ["http", "https"] and parsed.netloc
 
-# Begin scan
-if st.button("🚀 Start Scan"):
-    if not validate_url(url):
-        st.error("❌ Invalid URL. Please enter a valid website address.")
-    else:
-        st.info(f"🔍 Scanning {url} ...")
-        try:
-            results = []
+# Tabs for navigation
+tab1, tab2 = st.tabs(["🕵️ فحص الثغرات", "📄 نتائج الفحص"])
 
-            # Test: SSL/TLS
-            if "SSL/TLS Check" in selected_vulns:
-                if url.startswith("https://"):
-                    results.append(("SSL/TLS Check", "✅ Secure: Using HTTPS"))
-                else:
-                    results.append(("SSL/TLS Check", "❌ Insecure: Not using HTTPS"))
+with tab1:
+    st.header("🛡️ فحص الثغرات")
+    st.write("حدد أنواع الثغرات التي ترغب في فحصها واضغط على الزر لبدء الفحص.")
+    
+    # URL input and vulnerability selection
+    url = st.text_input("🌐 أدخل عنوان الموقع الإلكتروني", placeholder="https://example.com")
+    selected_vulns = st.multiselect("🧪 اختر الثغرات للفحص", list(vulns.keys()), default=list(vulns.keys()))
+    
+    # Start Scan button
+    start_scan = st.button("🚀 ابدأ الفحص")
+    
+with tab2:
+    st.header("📄 تقرير النتائج")
+    st.write("هنا ستظهر نتائج الفحص...")
 
-            # Test: HTTP Methods
-            if "HTTP Methods Check" in selected_vulns:
-                try:
-                    res = requests.options(url, timeout=5)
-                    allow = res.headers.get("Allow", "")
-                    risky = [m for m in ["PUT", "DELETE", "TRACE", "CONNECT"] if m in allow]
-                    if risky:
-                        results.append(("HTTP Methods Check", f"❌ Risky methods enabled: {', '.join(risky)}"))
+    # Show loading spinner during scan
+    if start_scan:
+        if not validate_url(url):
+            st.error("❌ URL غير صالح. يرجى إدخال عنوان موقع صحيح.")
+        else:
+            st.info(f"🔍 جاري فحص {url} ...")
+            
+            # Add loading spinner
+            with st.spinner("جارٍ الفحص..."):
+                results = []
+
+                # SSL/TLS Check
+                if "SSL/TLS Check" in selected_vulns:
+                    if url.startswith("https://"):
+                        results.append(("SSL/TLS Check", "✅ آمن: يستخدم HTTPS"))
                     else:
-                        results.append(("HTTP Methods Check", "✅ Safe: No risky HTTP methods"))
-                except Exception as e:
-                    results.append(("HTTP Methods Check", f"⚠️ Error checking methods: {e}"))
+                        results.append(("SSL/TLS Check", "❌ غير آمن: لا يستخدم HTTPS"))
 
-            # Test: Security Headers
-            if "Security Headers" in selected_vulns:
-                try:
-                    res = requests.get(url, timeout=5)
-                    headers = res.headers
-                    missing = []
-                    for header in ["X-Frame-Options", "Content-Security-Policy", "Strict-Transport-Security"]:
-                        if header not in headers:
-                            missing.append(header)
-                    if missing:
-                        results.append(("Security Headers", f"❌ Missing headers: {', '.join(missing)}"))
+                # HTTP Methods Check
+                if "HTTP Methods Check" in selected_vulns:
+                    try:
+                        res = requests.options(url, timeout=5)
+                        allow = res.headers.get("Allow", "")
+                        risky = [m for m in ["PUT", "DELETE", "TRACE", "CONNECT"] if m in allow]
+                        if risky:
+                            results.append(("HTTP Methods Check", f"❌ طرق خطيرة مفعلة: {', '.join(risky)}"))
+                        else:
+                            results.append(("HTTP Methods Check", "✅ آمن: لا توجد طرق HTTP خطيرة"))
+                    except Exception as e:
+                        results.append(("HTTP Methods Check", f"⚠️ خطأ في التحقق: {e}"))
+
+                # Security Headers Check
+                if "Security Headers" in selected_vulns:
+                    try:
+                        res = requests.get(url, timeout=5)
+                        headers = res.headers
+                        missing = []
+                        for header in ["X-Frame-Options", "Content-Security-Policy", "Strict-Transport-Security"]:
+                            if header not in headers:
+                                missing.append(header)
+                        if missing:
+                            results.append(("Security Headers", f"❌ رؤوس مفقودة: {', '.join(missing)}"))
+                        else:
+                            results.append(("Security Headers", "✅ جميع رؤوس الأمان موجودة"))
+                    except Exception as e:
+                        results.append(("Security Headers", f"⚠️ خطأ في التحقق: {e}"))
+
+                # Display results
+                st.markdown("### 🧾 نتائج الفحص")
+                for name, result in results:
+                    if "✅" in result:
+                        st.success(f"{name}: {result}")
+                    elif "❌" in result:
+                        st.error(f"{name}: {result}")
                     else:
-                        results.append(("Security Headers", "✅ All recommended security headers are present"))
-                except Exception as e:
-                    results.append(("Security Headers", f"⚠️ Error checking headers: {e}"))
+                        st.warning(f"{name}: {result}")
 
-            # Test: Injection-based vulnerabilities
-            def generic_test(payload, param="test", indicators=[]):
-                try:
-                    sep = "&" if "?" in url else "/?"
-                    full_url = f"{url}{sep}{param}={payload}"
-                    r = requests.get(full_url, timeout=5)
-                    text = r.text.lower()
-                    return any(ind.lower() in text for ind in indicators)
-                except:
-                    return False
-
-            if "SQL Injection" in selected_vulns:
-                indicators = ["sql syntax", "mysql", "syntax error"]
-                if generic_test(vulns["SQL Injection"], param="id", indicators=indicators):
-                    results.append(("SQL Injection", "❌ Vulnerable to SQL Injection"))
-                else:
-                    results.append(("SQL Injection", "✅ Not vulnerable to SQL Injection"))
-
-            if "Cross-Site Scripting (XSS)" in selected_vulns:
-                if generic_test(vulns["Cross-Site Scripting (XSS)"], param="q", indicators=["<script>alert('xss')"]):
-                    results.append(("XSS", "❌ Vulnerable to XSS"))
-                else:
-                    results.append(("XSS", "✅ Not vulnerable to XSS"))
-
-            if "Directory Traversal" in selected_vulns:
-                if generic_test(vulns["Directory Traversal"], param="file", indicators=["root:x:"]):
-                    results.append(("Directory Traversal", "❌ Vulnerable to Directory Traversal"))
-                else:
-                    results.append(("Directory Traversal", "✅ Not vulnerable to Directory Traversal"))
-
-            # Display results
-            st.markdown("### 🧾 Scan Results")
-            for name, result in results:
-                if "✅" in result:
-                    st.success(f"{name}: {result}")
-                elif "❌" in result:
-                    st.error(f"{name}: {result}")
-                else:
-                    st.warning(f"{name}: {result}")
-
-        except Exception as e:
-            st.error(f"🚫 An error occurred during scanning: {e}")
+                # Add download button for results
+                formatted_results = "\n".join([f"{name}: {result}" for name, result in results])
+                st.download_button("تحميل النتائج", data=formatted_results, file_name="scan_results.txt")
