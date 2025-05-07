@@ -27,9 +27,9 @@ st.markdown("""
 
 # List of example URLs for testing
 example_urls = [
-    "http://testphp.vulnweb.com/AJAX/index.php",
+
     "http://www.itsecgames.com/",
-    "http://vulnerableweb.com"
+    
 ]
 
 # Allow user to either enter their URL or select an example
