@@ -29,7 +29,8 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # URL input
-url = st.text_input("🌐 Enter Website URL", placeholder="https://example.com")
+url_input_key = "url_input_key"  # Unique key for URL input
+url = st.text_input("🌐 Enter Website URL", placeholder="https://example.com", key=url_input_key)
 
 # Vulnerability selection
 vulns = {
@@ -41,7 +42,8 @@ vulns = {
     "Security Headers": None
 }
 
-selected_vulns = st.multiselect("🧪 Select vulnerabilities to test", list(vulns.keys()), default=list(vulns.keys()))
+vulns_key = "vulns_key"  # Unique key for vulnerability selection
+selected_vulns = st.multiselect("🧪 Select vulnerabilities to test", list(vulns.keys()), default=list(vulns.keys()), key=vulns_key)
 
 # Function to validate URL
 def validate_url(url):
@@ -56,8 +58,8 @@ with tab1:
     st.write("Select the vulnerabilities you want to test and press the button to start the scan.")
     
     # URL input and vulnerability selection
-    url = st.text_input("🌐 Enter Website URL", placeholder="https://example.com")
-    selected_vulns = st.multiselect("🧪 Select vulnerabilities to test", list(vulns.keys()), default=list(vulns.keys()))
+    url = st.text_input("🌐 Enter Website URL", placeholder="https://example.com", key="unique_url_input")
+    selected_vulns = st.multiselect("🧪 Select vulnerabilities to test", list(vulns.keys()), default=list(vulns.keys()), key="unique_vulns_selection")
     
     # Start Scan button
     start_scan = st.button("🚀 Start Scan")
