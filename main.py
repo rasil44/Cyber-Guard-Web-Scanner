@@ -7,7 +7,7 @@ st.set_page_config(page_title="Cyber Guard Web Scanner", layout="wide")
 st.title("🛡️ Cyber Guard Web Scanner")
 st.markdown("Scan your website for common vulnerabilities like **SQL Injection**, **XSS**, and **more**.")
 
-# Styling
+# Styling for the button
 st.markdown("""
     <style>
     .stButton>button {
@@ -29,7 +29,7 @@ st.markdown("""
 example_urls = [
     "http://testphp.vulnweb.com/AJAX/index.php",
     "http://www.itsecgames.com/",
-    
+    "http://vulnerableweb.com"
 ]
 
 # Allow user to either enter their URL or select an example
